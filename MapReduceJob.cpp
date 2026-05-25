@@ -8,12 +8,15 @@ Implement:
 
 MapReduceJob::MapReduceJob(const MapReduceClient &client, const InputVec &inputVec, int multiThreadLevel)
 {
-    // TODO: implement this constructor
+    for(int i; i < multiThreadLevel; i++)
+    {
+
+    }
 }
 
 MapReduceState MapReduceJob::getState(void) const
 {
-    // TODO: implement this function
+    return job_state_;
 }
 
 void MapReduceJob::wait(void)

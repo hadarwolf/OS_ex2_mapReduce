@@ -2,7 +2,7 @@
 #define MAP_REDUCE_JOB_H
 
 #include "MapReduceClient.h"
-// you can add other includes here
+#include <thread>
 
 enum MapReduceStage
 {
@@ -18,8 +18,14 @@ public:
 	MapReduceStage stage;
 	double percentage;
 
+	/**
+	 * Operator == overload.
+	 * @param other the other state Object
+	 * @return the answer is it equal
+	 */
 	inline bool operator==(const MapReduceState &other) const
 	{
+		// They are equal if they are in the same state and their progression precent is at most 0.000001 away from each other.
 		return this->stage == other.stage && std::abs(this->percentage - other.percentage) < 1e-6;
 	}
 
@@ -49,9 +55,8 @@ public:
 	OutputVec getOutput(void);
 
 private:
-	/*
-		You can change everything on this part (these are just recommendations)
-	*/
+	MapReduceState  job_state_;
+	std::vector<std::thread> threads;
 };
 	
 #endif // MAP_REDUCE_JOB_H

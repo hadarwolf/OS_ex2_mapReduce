@@ -1,4 +1,4 @@
-#include "MapReduceJob.h"
+#include "../MapReduceJob.h"
 #include <iostream>
 #include <string>
 #include <array>

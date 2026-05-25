@@ -2,20 +2,31 @@
 #define MAP_CONTEXT_H
 
 #include "MapReduceKeys.h"
-// you can add other includes as you wish
 
+
+/**
+ * The calss is responsible to hold the data of the intermidiate stage before the shuffle stage.
+ */
 class MapContext
 {
 public:
-    /*
-    You must keep and implement this function:
-    */
+    /**
+     * Constructor
+     * @param intermediate_vec The refrense to the data structure to add pairs to
+     */
+    MapContext(IntermediateVec& intermediate_vec): intermidiate_vec(intermidiate_vec){}
+
+    /**
+     * Adds the listed vars(key and value) as a IntermediatePair object to a inner data structure.
+     * @param key The key pointer to be added to the data structure.
+     * @param value The Value pointer to be added to the data structure.
+     */
     void addIntermediate(std::shared_ptr<K2> key, std::shared_ptr<V2> value);
 
-    /*
-    You can change everything else, including the constructor/desturctor
-    You can also add fields here (even public ones)
-    */
+
+
+private:
+    IntermediateVec& intermidiate_vec; // The chosen data structure
 };
 
 #endif // MAP_CONTEXT_H
