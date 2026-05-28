@@ -1,8 +1,13 @@
 #ifndef MAP_REDUCE_JOB_H
 #define MAP_REDUCE_JOB_H
 
+
 #include "MapReduceClient.h"
 #include <thread>
+#include <barrier>
+#include<algorithm>
+#include <list>
+#include <map>
 
 enum MapReduceStage
 {
@@ -57,16 +62,28 @@ public:
 private:
 	friend class std::thread; // allow threads to have access to private fields and methods.
 
-	
-	MapReduceState  job_state_;
-	std::unique_ptr<std::thread[]> threads;  // pointer to the thread array
-	std::unique_ptr<IntermediateVec[]> intermediate_vectors;  //pointer to the intermidiate array
+	const MapReduceClient& client_; // the client with the map and reduce methods
+	std::vector<std::thread> threads;
+	std::vector<IntermediateVec> intermediate_vectors;
+	std::list<IntermediateVec> shuffeld_intermidiate_vecs; // The intermidiate vectors after the shuffle phase.
+
+	std::mutex pop_queue_mutex;
+	ReduceContext reduce_context_; // deals with the
+
+	bool changed_state = false;
+
+	std::vector<MapContext> map_context_; // holds and manages the intermidite pairs of each thread, each thread gets 1 map context.
 	OutputVec output_vec_;
 	const InputVec& input_vec_;
 	std::atomic<uint64_t>* atomic_input_counter; // will hold in first 2 bits the state ofnthe job,
-												// next 31 bit are the number of pairs proccessed in input_vec,
-												//next 31 bits are the number of paires left to proccess in input_vec.
+	// next 31 bit are the number of pairs proccessed in input_vec,
+	//next 31 bits are the number of paires left to proccess in input_vec.
+	static const uint64_t get_num_proccessed = 0x7fffffff;  // 7 in hex is 0011 in binary,
+	static  const uint64_t add_one_to_num_proccessed = 1;
+	static const uint64_t add_one_to_map_state = 0x4000000000000000;
+	static const uint64_t reduce_one_to_num_nonprocessed = 0x80000000;
 
+	std::barrier<> barrier_;
 
 	/**
 	 *
@@ -75,8 +92,10 @@ private:
 	 * @param start iterator to the start of the segmnet of the input this thread needs to handle.
 	 * @param end   iterator to the end   of the segmnet of the input this thread needs to handle.
 	 */
-	static void run_job(int thread_id, MapReduceJob* job,
-	                    InputVec* input_vec); // TODO maby have the jobs grab pairs from the start vector instead of deviding it equaly, maby will be more efiecient, on the other hand we will need to hold a mutex to prevent access to the resource simotaniasly.
+	static void run_job(int thread_id, MapReduceJob* job);
+	static void map_phase(MapReduceJob* job);
+	static void shuffle_phase(MapReduceJob* job);
+	static void reduce_phase(MapReduceJob* job);
 };
 	
 #endif // MAP_REDUCE_JOB_H
