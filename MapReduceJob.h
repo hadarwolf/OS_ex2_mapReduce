@@ -97,5 +97,6 @@ private:
 	static void shuffle_phase(MapReduceJob* job);
 	static void reduce_phase(MapReduceJob* job);
 };
-	
+
+
 #endif // MAP_REDUCE_JOB_H
