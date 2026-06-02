@@ -75,7 +75,7 @@ private:
 	std::vector<MapContext> map_context_; // holds and manages the intermidite pairs of each thread, each thread gets 1 map context.
 	OutputVec output_vec_;
 	const InputVec& input_vec_;
-	std::atomic<uint64_t>* atomic_input_counter; // will hold in first 2 bits the state ofnthe job,
+	std::atomic<uint64_t> atomic_input_counter; // will hold in first 2 bits the state ofnthe job,
 	// next 31 bit are the number of pairs proccessed in input_vec,
 	//next 31 bits are the number of paires left to proccess in input_vec.
 	static const uint64_t get_num_proccessed = 0x7fffffff;  // 7 in hex is 0011 in binary,
@@ -89,13 +89,19 @@ private:
 	 *
 	 * @param thread_id the thread id that starts in this function
 	 * @param job the current job.
-	 * @param start iterator to the start of the segmnet of the input this thread needs to handle.
-	 * @param end   iterator to the end   of the segmnet of the input this thread needs to handle.
 	 */
 	static void run_job(int thread_id, MapReduceJob* job);
-	static void map_phase(MapReduceJob* job);
+	static void map_phase(MapReduceJob* job, int  thread_id);
 	static void shuffle_phase(MapReduceJob* job);
 	static void reduce_phase(MapReduceJob* job);
+
+	/**
+	 * This fuction searches for the index in the intemidiate vectors that maximizes the key of the last elemnt in that vector.
+	 * @param job the job with the intermidiate vecs that we are searching
+	 * @param last_non_empty_vec_index the first index that we need to start the search at.
+	 * @return the index of the intermidiate vector that has the largest key in its last element.
+	 */
+	static int MapReduceJob::find_max_key_pair(MapReduceJob *job, int last_non_empty_vec_index);
 };
 
 
