@@ -7,6 +7,7 @@
 #include <barrier>
 #include<algorithm>
 #include <list>
+#include <mutex>
 #include <map>
 
 enum MapReduceStage
@@ -64,26 +65,33 @@ private:
 
 	const MapReduceClient& client_; // the client with the map and reduce methods
 	std::vector<std::thread> threads;
-	std::vector<IntermediateVec> intermediate_vectors;
-	std::list<IntermediateVec> shuffeld_intermidiate_vecs; // The intermidiate vectors after the shuffle phase.
-
-	std::mutex pop_queue_mutex;
-	ReduceContext reduce_context_; // deals with the
-
-	bool changed_state = false;
-
-	std::vector<MapContext> map_context_; // holds and manages the intermidite pairs of each thread, each thread gets 1 map context.
 	OutputVec output_vec_;
 	const InputVec& input_vec_;
-	std::atomic<uint64_t> atomic_input_counter; // will hold in first 2 bits the state ofnthe job,
-	// next 31 bit are the number of pairs proccessed in input_vec,
-	//next 31 bits are the number of paires left to proccess in input_vec.
-	static const uint64_t get_num_proccessed = 0x7fffffff;  // 7 in hex is 0011 in binary,
-	static  const uint64_t add_one_to_num_proccessed = 1;
-	static const uint64_t add_one_to_map_state = 0x4000000000000000;
-	static const uint64_t reduce_one_to_num_nonprocessed = 0x80000000;
+	std::vector<IntermediateVec> intermediate_vectors;
+	std::list<IntermediateVec> shuffeld_intermidiate_vecs; // The intermidiate vectors after the shuffle phase.
+	// will hold in first 2 bits the state of the job,
+	// next 31 bit are the number of pairs to be proccessed at the current stage,
+	// next 31 bits are the number of paires that were processed.
+	std::atomic<uint64_t> atomic_input_counter;
+	bool wait_wasnt_called = true;
 
+	std::mutex pop_queue_mutex;
+	std::mutex wait_mutex;
 	std::barrier<> barrier_;
+
+
+	ReduceContext reduce_context_; // deals with the
+	std::vector<MapContext> map_context_; // holds and manages the intermidite pairs of each thread, each thread gets 1 map context.
+
+
+	int num_intermidiate_pairs = 0;
+
+	static const uint64_t get_num_pairs = 0x7fffffff;  // 7 in hex is 0011 in binary,
+	static const uint64_t UNDEFINED_STATE = 0x0000000000000000;
+	static const uint64_t MAP_STATE = 0x4000000000000000;    // 0100(bin) = 4(hex)
+	static const uint64_t SHUFFLE_STATE = 0x8000000000000000; // 1000(bin) = 8(hex)
+	static const uint64_t REDUCE_STATE = 0xC000000000000000;  // (1100)(bin) = C(hex)
+
 
 	/**
 	 *
