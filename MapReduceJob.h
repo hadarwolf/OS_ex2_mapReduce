@@ -48,20 +48,55 @@ public:
 	You CAN NOT change or add properties to this part (public API).
 	*/
 
+	/**
+	 * Constructor to the object that completes the mapReduce job.
+	 * The Job satrts to be executed when creating this object.
+	 *
+	 * @param client the client that runs the map and reduce functions
+	 * @param inputVec the input data to be processed.
+	 * @param multiThreadLevel the number of threads wanted to process the data
+	 */
 	MapReduceJob(const MapReduceClient &client, const InputVec &inputVec, int multiThreadLevel);
 
+	/**
+	 * Destructor: it waits till the job is done before destroying the object
+	 */
 	~MapReduceJob();
 
+	/**
+	 * Returns the state of the job.
+	 *
+	 * @return The state the job is in (what stage, and how many percent of that stage was completed)
+	 */
 	MapReduceState getState(void) const;
 
+	/**
+	 * A bool checker that checks if the job is done.
+	 * @return a boolean value indicating if the job is finished or not
+	 */
 	bool isDone(void) const;
-	
+
+	/**
+	 * The caller of this function gets stuck in this method till the job is done.
+	 */
 	void wait(void);
 
+	/**
+	 * Returns the result of the job, if when this function is called the job was not done
+	 * then the caller of this function will get stuck in this function till the job is done
+	 * and he can get a valid return
+	 *                                                         
+	 * @return The output vector from the MapReduce algorithm
+	 */
 	OutputVec getOutput(void);
 
 private:
 	friend class std::thread; // allow threads to have access to private fields and methods.
+
+
+	//************************************//
+	//************** FIELDS **************//
+	//************************************//
 
 	const MapReduceClient& client_; // the client with the map and reduce methods
 	std::vector<std::thread> threads;
@@ -69,22 +104,20 @@ private:
 	const InputVec& input_vec_;
 	std::vector<IntermediateVec> intermediate_vectors;
 	std::list<IntermediateVec> shuffeld_intermidiate_vecs; // The intermidiate vectors after the shuffle phase.
+
 	// will hold in first 2 bits the state of the job,
 	// next 31 bit are the number of pairs to be proccessed at the current stage,
 	// next 31 bits are the number of paires that were processed.
 	std::atomic<uint64_t> atomic_input_counter;
-	bool wait_wasnt_called = true;
-
 	std::mutex pop_queue_mutex;
 	std::mutex wait_mutex;
 	std::barrier<> barrier_;
 
+	bool wait_wasnt_called = true;
 
-	ReduceContext reduce_context_; // deals with the
-	std::vector<MapContext> map_context_; // holds and manages the intermidite pairs of each thread, each thread gets 1 map context.
+	ReduceContext reduce_context_; // deals with filling the output_vec
 
-
-	int num_intermidiate_pairs = 0;
+	uint64_t num_intermidiate_pairs = 0;
 
 	static const uint64_t get_num_pairs = 0x7fffffff;  // 7 in hex is 0011 in binary,
 	static const uint64_t UNDEFINED_STATE = 0x0000000000000000;
@@ -93,15 +126,47 @@ private:
 	static const uint64_t REDUCE_STATE = 0xC000000000000000;  // (1100)(bin) = C(hex)
 
 
+	//************************************//
+	//************** FUNCTIONS **************//
+	//************************************//
+
 	/**
+	 * The launce function of each thread, that does the job acording to the MapReduce algorithm.
 	 *
 	 * @param thread_id the thread id that starts in this function
 	 * @param job the current job.
 	 */
 	static void run_job(int thread_id, MapReduceJob* job);
+
+	/**
+	 * The map phase includes poping pairs out of the input vec and activating the map method on them.
+	 *
+	 * @param thread_id the thread id that starts in this function
+	 * @param job the current job.
+	 */
 	static void map_phase(MapReduceJob* job, int  thread_id);
+
+	/**
+	 * The shuffle phase is done only by thread 0, and include reorgenizing all the output from the map phase
+	 * into vectors, such that each key gets a vector with all the values with that key.
+	 *
+	 * @param job the current job.
+	 */
 	static void shuffle_phase(MapReduceJob* job);
+
+	/**
+	 *The reduce phase is done by all threads and include taking a vector from the shuffle phase and aplying the
+	 * reduce function on it.
+	 *
+	 * @param job the current job.
+	 */
 	static void reduce_phase(MapReduceJob* job);
+
+	/**
+	 * DOes the calculation of how many overall pairs are there in the
+	 * intermidiate stage( after the map and before the end of the reduce)
+	 */
+	void calculate_num_intermidiate_pairs();
 
 	/**
 	 * This fuction searches for the index in the intemidiate vectors that maximizes the key of the last elemnt in that vector.
@@ -109,7 +174,7 @@ private:
 	 * @param last_non_empty_vec_index the first index that we need to start the search at.
 	 * @return the index of the intermidiate vector that has the largest key in its last element.
 	 */
-	static int MapReduceJob::find_max_key_pair(MapReduceJob *job, int last_non_empty_vec_index);
+	static int find_max_key_pair(MapReduceJob *job, int last_non_empty_vec_index);
 };
 
 

@@ -12,9 +12,9 @@ class MapContext
 public:
     /**
      * Constructor
-     * @param intermediate_vec The refrense to the data structure to add pairs to
+     * @param intermidiate_vec The refrense to the data structure to add pairs to
      */
-    MapContext(IntermediateVec& intermediate_vec): intermidiate_vec(intermidiate_vec){}
+    MapContext(IntermediateVec& intermidiate_vec): intermidiate_vec(intermidiate_vec){}
 
     /**
      * Adds the listed vars(key and value) as a IntermediatePair object to a inner data structure.
