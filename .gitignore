@@ -1,0 +1,12 @@
+cmake-build-debug/
+.idea/
+out/
+work/
+__pycache__/
+__MACOSX/
+*.class
+*.o
+*.obj
+*.pyc
+*.wlf
+test_exe
